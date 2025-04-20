@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Leo Bastos">
+<meta name="author" content="Leo Bastos (PROCC/Fiocruz and IMPA tech)">
 
 <title>Measles in the US, 2025</title>
 <style>
@@ -129,7 +129,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Measles in the US, 2025</h1>
+<div class="quarto-title-block"><div><h1 class="title">Measles in the US, 2025</h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
 </div>
 
 
@@ -139,7 +139,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Author</div>
     <div class="quarto-title-meta-contents">
-             <p>Leo Bastos </p>
+             <p>Leo Bastos (PROCC/Fiocruz and IMPA tech) </p>
           </div>
   </div>
     
@@ -155,15 +155,17 @@ window.Quarto = {
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
 <p>This report aims to provide an estimate of the actual number of measles cases in the US using the datasets provided by the <a href="https://www.cdc.gov">Center for Diseases Control</a> (CDC).</p>
-<p>Estimation is needed because in the epidemiological surveillance the most up-to-date information usually suffers from notification delay. This delay can be caused by several things, for instance the time from the symptoms onset to look after a hospital is already a source of delay, but there is also a time to confirm the case in a lab, there is also a time between the case been fully identified and the CDC become aware of that case.</p>
-<p>The impact of such delay is that when a person look at the data by the symptoms onset, which is the correct thing to do because it is the date closer to the infection date, the most recent data is always truncated. This gives an impression that the number of cases are reducing but as mentioned the number of cases may be under represented because of reporting delays.</p>
-<p>It is important to clarify the this under representation is in theory the same as the under notification, but the is an important difference. The under representation due to delays will eventually be reported and later be fully known. Of course there is also the under notification issue, i,e, cases the will never be in the system, and we are not dealing with them.</p>
-<p>So the aim here is to organize the data, apply some statistical methods to correct the delays and visualize the total reported cases given b the reported cases and the cases that occured but have not been observed yet only estimated. This correction is called <strong>Nowcasting</strong>.</p>
+<p>Estimation is needed because there are delays on the notification process ehich is an usual issue in real-time epidemiological surveillance. These delays can be caused by several things, for instance the time from the symptoms onset to look after a hospital is already a source of delay, but there is also a time to confirm the case in a lab, there is also a time between the case been fully identified and the CDC become aware of that case. As an example, a measles case identified today whose symptoms onset occur one week ago could be officially reported to CDC only next week, so this example carries one week delay due to the time of the patient look after a health facility, then there is some time to the case be confirmed (clinically or laboratory tested), then this case must be reported into a system that certainly varies from region to region, and finally the CDC is informed about the existence of this case. Obviously this process should be as fast as possible, but we have to accept that there are several sources of delay. Hence, a delay correction method is needed.</p>
+<p>Such delays may impact on a real-time analysis of the disease dynamics. For instance, when an analyst look at the number of cases by the time of symptoms onset, which is the correct thing to do because it is the date closer to the infection date, the most recent data is always truncated. This gives an impression that the number of cases are reducing but the number of cases may be under represented because of reporting delays.</p>
+<p>It is important to clarify at the most recent periods this under representation is in theory the same as the under notification, but there is an important difference. The under representation due to delays will be reported and eventually be fully known. And in the under notification the cases are lost and will never be known. In the delay correction we are not dealing with under notification.</p>
+<p>The aim here is to organize the data, apply some statistical methods to correct the delays and visualize the total reported cases given by the observed cases added by the estimated number of cases the occurred but have not been reported yet. This correction is called <strong>Nowcasting</strong>.</p>
 </section>
 <section id="data" class="level2">
 <h2 class="anchored" data-anchor-id="data">Data</h2>
-<p>Since end of February 2025, the in the United States releases every Friday, among other data, the weekly number of measles cases by rash onset date (<a href="https://www.cdc.gov/measles/data-research/index.html" class="uri">https://www.cdc.gov/measles/data-research/index.html</a>), Since then I downloaded every Friday the most up-to-date dataset with measles counts and save it in the data folder.</p>
+<p>Since end of February 2025, the in the United States releases every Friday, among other data, the weekly number of measles cases by rash onset date (<a href="https://www.cdc.gov/measles/data-research/index.html" class="uri">https://www.cdc.gov/measles/data-research/index.html</a>), Since then I downloaded every Friday the most up-to-date dataset with measles counts and save it in the <a href="../data">data folder</a>.</p>
 <div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(nowcaster) <span class="co"># https://covid19br.github.io/nowcaster/</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -178,6 +180,7 @@ window.Quarto = {
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">dt_week_release =</span> <span class="fu">max</span>(week_start)</span>
 <span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> <span class="fu">ungroup</span>() <span class="sc">|&gt;</span> <span class="fu">select</span>(<span class="sc">-</span>a)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 </section>
 <section id="delay-correction-model" class="level2">
@@ -203,7 +206,7 @@ Figure&nbsp;1: Reported measles cases by rash onset week in the US since 2023.
 </div>
 </div>
 </div>
-<p>The behavior of a false reduction in cases can be noticed when we look at all released datasets by CDC where and the end of the time series for each dataset the is a drop in the number of cases <a href="#fig-measles25" class="quarto-xref">Figure&nbsp;2</a>. For example, in week 7, the number of reported measles cases at that week was (CONTINUE)</p>
+<p>There is a pattern of a reduction in the number of cases at the most up-to-date weeks for each dataset. <a href="#fig-measles25" class="quarto-xref">Figure&nbsp;2</a> presents dataset released weekly by in the CDC website from weeks 7 to 14. In order to illustrate the delays lets take the calendar week 7, starting on 2025-02-16 and ending on 2025-02-22, as an example. The number of measles cases at calendar week 7 reported at the same week 7 was 12, one week later the number of cases at calendar week 7 were updated and increased to 57 measles cases, then on week 9 it went up to 74, then 82 on week 10, and the numbers were updated in each new release ending up to 85 measles cases at week 7 reported on week 14. This pattern is similar on different calendar weeks. So we try to learn about the delay pattern taking into account the disease dynamics on the statistical model previously described.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="fig-measles25" class="quarto-float quarto-figure quarto-figure-center anchored">
@@ -220,6 +223,8 @@ Figure&nbsp;2: All released data for the reported measles cases by rash onset we
 </div>
 <p>The data is prepared, the nowcasting run and the Monte Carlo is saved.</p>
 <div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Data preparing</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>time.tbl <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">dt_time =</span> <span class="fu">seq</span>(DT_trunc, <span class="fu">max</span>(measles<span class="sc">$</span>week_start), <span class="dv">7</span>)) <span class="sc">|&gt;</span> <span class="fu">rowid_to_column</span>(<span class="at">var =</span> <span class="st">"time"</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -279,6 +284,7 @@ Figure&nbsp;2: All released data for the reported measles cases by rash onset we
 <span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a><span class="co"># Saving the MOnte Carlo samples</span></span>
 <span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>measles.now <span class="ot">&lt;-</span> <span class="fu">nowcasting.summary</span>(out, <span class="at">age =</span> F)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 <p>The corrected time series is then presented in <a href="#fig-measles.now" class="quarto-xref">Figure&nbsp;3</a> and</p>
 <div class="cell">
@@ -309,6 +315,16 @@ Figure&nbsp;4: Reported measles cases by rash onset week in the US in 2025 with 
 </div>
 </div>
 </div>
+</section>
+<section id="drawbacks" class="level2">
+<h2 class="anchored" data-anchor-id="drawbacks">Drawbacks</h2>
+<p>Correcting the delays for the whole country assumes that the estimated disease dynamics, the temporal component, is the same in the whole country which is not true because the current outbreak is concentrated in the state of Texas, so the nowcasting that would better estimate the disease dynamics should be performed at least by state or similar regions. A spatial delay correction model was proposed in <span class="citation" data-cites="bastos2019">(<a href="#ref-bastos2019" role="doc-biblioref">Bastos et al. 2019</a>)</span>. We are also assuming that the delay pattern does not depend on calendar time nor space which may be a strong assumption.</p>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Delays are intrinsic characteristics of the real-time epidemiological surveillance and analysts should either ignore the most up-to-date information or try to correct the delays using a statistical method. The chain-ladder method is an efficient method to correct delays in this context and can be used alone of together with other methods to provide decision makers with useful information for act to avoid or mitigate disease outbreaks.</p>
+<!-- -->
+
 
 </section>
 
@@ -410,6 +426,57 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       container: window.document.getElementById('quarto-embedded-source-code-modal')
     });
     clipboardModal.on('success', onCopySuccess);
+  }
+  const viewSource = window.document.getElementById('quarto-view-source') ||
+                     window.document.getElementById('quarto-code-tools-source');
+  if (viewSource) {
+    const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+    viewSource.addEventListener("click", function(e) {
+      if (sourceUrl) {
+        // rstudio viewer pane
+        if (/\bcapabilities=\b/.test(window.location)) {
+          window.open(sourceUrl);
+        } else {
+          window.location.href = sourceUrl;
+        }
+      } else {
+        const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+        modal.show();
+      }
+      return false;
+    });
+  }
+  function toggleCodeHandler(show) {
+    return function(e) {
+      const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+      for (let i=0; i<detailsSrc.length; i++) {
+        const details = detailsSrc[i].parentElement;
+        if (show) {
+          details.open = true;
+        } else {
+          details.removeAttribute("open");
+        }
+      }
+      const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+      const fromCls = show ? "hidden" : "unhidden";
+      const toCls = show ? "unhidden" : "hidden";
+      for (let i=0; i<cellCodeDivs.length; i++) {
+        const codeDiv = cellCodeDivs[i];
+        if (codeDiv.classList.contains(fromCls)) {
+          codeDiv.classList.remove(fromCls);
+          codeDiv.classList.add(toCls);
+        } 
+      }
+      return false;
+    }
+  }
+  const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+  if (hideAllCode) {
+    hideAllCode.addEventListener("click", toggleCodeHandler(false));
+  }
+  const showAllCode = window.document.getElementById("quarto-show-all-code");
+  if (showAllCode) {
+    showAllCode.addEventListener("click", toggleCodeHandler(true));
   }
     var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
     var mailtoRegex = new RegExp(/^mailto:/);
@@ -740,7 +807,288 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
   }
 });
-</script>
+</script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="sourceCode" id="cb3" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Measles in the US, 2025"</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "Leo Bastos (PROCC/Fiocruz and IMPA tech)"</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span><span class="co"> </span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">    code-copy: true</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: true</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="an">editor:</span><span class="co"> visual</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="an">bibliography:</span><span class="co"> references.bib</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="fu">## Introduction</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>This report aims to provide an estimate of the actual number of measles cases in the US using the datasets provided by the <span class="co">[</span><span class="ot">Center for Diseases Control</span><span class="co">](https://www.cdc.gov)</span> (CDC).</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>Estimation is needed because there are delays on the notification process ehich is an usual issue in real-time epidemiological surveillance. These delays can be caused by several things, for instance the time from the symptoms onset to look after a hospital is already a source of delay, but there is also a time to confirm the case in a lab, there is also a time between the case been fully identified and the CDC become aware of that case. As an example, a measles case identified today whose symptoms onset occur one week ago could be officially reported to CDC only next week, so this example carries one week delay due to the time of the patient look after a health facility, then there is some time to the case be confirmed (clinically or laboratory tested), then this case must be reported into a system that certainly varies from region to region, and finally the CDC is informed about the existence of this case. Obviously this process should be as fast as possible, but we have to accept that there are several sources of delay. Hence, a delay correction method is needed.</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>Such delays may impact on a real-time analysis of the disease dynamics. For instance, when an analyst look at the number of cases by the time of symptoms onset, which is the correct thing to do because it is the date closer to the infection date, the most recent data is always truncated. This gives an impression that the number of cases are reducing but the number of cases may be under represented because of reporting delays.</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>It is important to clarify at the most recent periods this under representation is in theory the same as the under notification, but there is an important difference. The under representation due to delays will be reported and eventually be fully known. And in the under notification the cases are lost and will never be known. In the delay correction we are not dealing with under notification.</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>The aim here is to organize the data, apply some statistical methods to correct the delays and visualize the total reported cases given by the observed cases added by the estimated number of cases the occurred but have not been reported yet. This correction is called **Nowcasting**.</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="fu">## Data</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>Since end of February 2025, the in the United States releases every Friday, among other data, the weekly number of measles cases by rash onset date (<span class="ot">&lt;https://www.cdc.gov/measles/data-research/index.html&gt;</span>), Since then I downloaded every Friday the most up-to-date dataset with measles counts and save it in the <span class="co">[</span><span class="ot">data folder</span><span class="co">](../data)</span>.</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(nowcaster) <span class="co"># https://covid19br.github.io/nowcaster/</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Getting file names </span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="st">"../data/"</span>, <span class="at">pattern=</span><span class="st">"*.csv"</span>, <span class="at">full.names=</span><span class="cn">TRUE</span>)</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>measles <span class="ot">&lt;-</span> <span class="fu">lapply</span>( files,</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>                   vroom<span class="sc">::</span>vroom) <span class="sc">|&gt;</span> </span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>(<span class="at">.id =</span> <span class="st">"a"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(a) <span class="sc">|&gt;</span> </span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>    <span class="at">dt_week_release =</span> <span class="fu">max</span>(week_start)</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> <span class="fu">ungroup</span>() <span class="sc">|&gt;</span> <span class="fu">select</span>(<span class="sc">-</span>a)</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="fu">## Delay correction model</span></span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>The delay correction is based on the chain-ladder model described (and extended) in <span class="co">[</span><span class="ot">@bastos2019</span><span class="co">]</span> implemented in the nowcaster R package <span class="co">[</span><span class="ot">@nowcaster</span><span class="co">]</span>. Let $Y_{t,d}$ be the number of measles cases at week $t$, $t=1,2,\ldots,T$, delayed by $d$ weeks, $d=0,1,2,\ldots,D_{max}$. The Bayesian chain-ladder model is given by $$Y_{t,d} \sim NegBin(\lambda_{t,d}, \phi), \qquad \lambda_{t,d}&gt;0, \quad \phi&gt;0.$$ And the expected number of the cases can decomposed by time and delay random effects as the following $$\log(\lambda_{t,d}) = \alpha + \beta_t + \gamma_d.$$</span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>The number of cases by week are given by $$Y_t = \sum_{d=0}^{D_{max}}Y_{t,d}, \qquad t=1,2,\ldots,T.$$ However, all $Y_{t,d}$ for $t+d&gt;T$ are cases that occur but have not been reported yet. Those cases will be estimated from the posterior predictive $$f(<span class="sc">\{</span>y_{t,d: t+d &gt; T}<span class="sc">\}</span>|<span class="sc">\{</span>y_{t,d: t+d\leq T}<span class="sc">\}</span>).$$</span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>Samples from this distribution can be obtained and Monte Carlo estimates for the weekly cases can be calculated, called here as the nowcasting. More details of the method can be found in <span class="co">[</span><span class="ot">@bastos2019</span><span class="co">]</span>.</span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a><span class="fu">## Results</span></span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>@fig-measles presents the number of measles cases in the US. The year of 2025 presents an large increase in the cases compared with the previous two years. A reducing of the number of cases can be noticed in the end of the time series. However the the most up-to-date number of cases are truncated because there are some cases the have not been reported yet.</span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-measles</span></span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Reported measles cases by rash onset week in the US since 2023."</span></span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a><span class="co"># Maximum delay size (Dmax) </span></span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>Dmax <span class="ot">&lt;-</span> <span class="fu">diff</span>(<span class="fu">range</span>(measles<span class="sc">$</span>dt_week_release)) <span class="sc">|&gt;</span> <span class="fu">as.numeric</span>() <span class="sc">/</span> <span class="dv">7</span></span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a><span class="co"># Start of the week of the last dataset</span></span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>DT_last_B <span class="ot">&lt;-</span> <span class="fu">max</span>(measles<span class="sc">$</span>dt_week_release) </span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>measles <span class="sc">|&gt;</span> </span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(dt_week_release <span class="sc">==</span> DT_last_B) <span class="sc">|&gt;</span> </span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> week_start, <span class="at">y =</span> cases)) <span class="sc">+</span> </span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span> </span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_breaks =</span> <span class="st">"years"</span>, <span class="at">date_labels =</span> <span class="st">"%Y"</span>, <span class="at">minor_breaks =</span> <span class="st">"weeks"</span>) <span class="sc">+</span></span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>  <span class="co"># scale_color_manual(values = 1:length(files), labels = paste("Week",7 + 1:length(files))) + </span></span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Measles cases in the US"</span>,</span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Week"</span>,</span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Cases"</span>,</span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>    <span class="co"># color = "Data release date",</span></span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"Source: https://www.cdc.gov/measles/data-research/"</span>, </span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> </span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>( <span class="at">base_size =</span> <span class="dv">16</span>) <span class="sc">+</span> </span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"inside"</span>, <span class="at">legend.position.inside =</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">0.75</span>))</span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a>There is a pattern of a reduction in the number of cases at the most up-to-date weeks for each dataset. @fig-measles25 presents dataset released weekly by in the CDC website from weeks 7 to 14. In order to illustrate the delays lets take the calendar week 7, starting on 2025-02-16 and ending on 2025-02-22, as an example. The number of measles cases at calendar week 7 reported at the same week 7 was 12, one week later the number of cases at calendar week 7 were updated and increased to 57 measles cases, then on week 9 it went up to 74, then 82 on week 10, and the numbers were updated in each new release ending up to 85 measles cases at week 7 reported on week 14. This pattern is similar on different calendar weeks. So we try to learn about the delay pattern taking into account the disease dynamics on the statistical model previously described.</span>
+<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-measles25</span></span>
+<span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
+<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "All released data for the reported measles cases by rash onset week in the US."</span></span>
+<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
+<span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a><span class="co"># Minimum date to be considered. Information before is useless for calculate the delay</span></span>
+<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a>DT_trunc <span class="ot">&lt;-</span> <span class="fu">min</span>(measles<span class="sc">$</span>dt_week_release) <span class="sc">-</span> Dmax <span class="sc">*</span> <span class="dv">7</span></span>
+<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a>measles <span class="sc">|&gt;</span> </span>
+<span id="cb3-109"><a href="#cb3-109" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(week_start <span class="sc">&gt;=</span> DT_trunc) <span class="sc">|&gt;</span> </span>
+<span id="cb3-110"><a href="#cb3-110" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb3-111"><a href="#cb3-111" aria-hidden="true" tabindex="-1"></a>    <span class="at">week_release =</span> <span class="fu">factor</span>(<span class="fu">week</span>(dt_week_release), <span class="at">ordered =</span> T)</span>
+<span id="cb3-112"><a href="#cb3-112" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb3-113"><a href="#cb3-113" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> week_start, <span class="at">y =</span> cases, </span>
+<span id="cb3-114"><a href="#cb3-114" aria-hidden="true" tabindex="-1"></a>             <span class="at">group =</span> week_release, <span class="at">color =</span> week_release</span>
+<span id="cb3-115"><a href="#cb3-115" aria-hidden="true" tabindex="-1"></a>             )) <span class="sc">+</span> </span>
+<span id="cb3-116"><a href="#cb3-116" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span> </span>
+<span id="cb3-117"><a href="#cb3-117" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_breaks =</span> <span class="st">"week"</span>, <span class="at">date_labels =</span> <span class="st">"%U"</span>) <span class="sc">+</span></span>
+<span id="cb3-118"><a href="#cb3-118" aria-hidden="true" tabindex="-1"></a>  <span class="co"># scale_color_manual(values = 1:length(files), labels = paste("Week",7 + 1:length(files))) + </span></span>
+<span id="cb3-119"><a href="#cb3-119" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb3-120"><a href="#cb3-120" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Measles cases in the US"</span>,</span>
+<span id="cb3-121"><a href="#cb3-121" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Week"</span>,</span>
+<span id="cb3-122"><a href="#cb3-122" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Cases"</span>,</span>
+<span id="cb3-123"><a href="#cb3-123" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"Week of data release"</span>,</span>
+<span id="cb3-124"><a href="#cb3-124" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"Source: https://www.cdc.gov/measles/data-research/"</span>, </span>
+<span id="cb3-125"><a href="#cb3-125" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> </span>
+<span id="cb3-126"><a href="#cb3-126" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>( <span class="at">base_size =</span> <span class="dv">16</span>) <span class="sc">+</span> </span>
+<span id="cb3-127"><a href="#cb3-127" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"inside"</span>, </span>
+<span id="cb3-128"><a href="#cb3-128" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.position.inside =</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">0.6</span>),</span>
+<span id="cb3-129"><a href="#cb3-129" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="cn">NA</span>))</span>
+<span id="cb3-130"><a href="#cb3-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-131"><a href="#cb3-131" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-132"><a href="#cb3-132" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-133"><a href="#cb3-133" aria-hidden="true" tabindex="-1"></a>The data is prepared, the nowcasting run and the Monte Carlo is saved.</span>
+<span id="cb3-134"><a href="#cb3-134" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-137"><a href="#cb3-137" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb3-138"><a href="#cb3-138" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb3-139"><a href="#cb3-139" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb3-140"><a href="#cb3-140" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
+<span id="cb3-141"><a href="#cb3-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-142"><a href="#cb3-142" aria-hidden="true" tabindex="-1"></a><span class="co"># Data preparing</span></span>
+<span id="cb3-143"><a href="#cb3-143" aria-hidden="true" tabindex="-1"></a>time.tbl <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">dt_time =</span> <span class="fu">seq</span>(DT_trunc, <span class="fu">max</span>(measles<span class="sc">$</span>week_start), <span class="dv">7</span>)) <span class="sc">|&gt;</span> <span class="fu">rowid_to_column</span>(<span class="at">var =</span> <span class="st">"time"</span>)</span>
+<span id="cb3-144"><a href="#cb3-144" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-145"><a href="#cb3-145" aria-hidden="true" tabindex="-1"></a><span class="co"># Time of the first dataset</span></span>
+<span id="cb3-146"><a href="#cb3-146" aria-hidden="true" tabindex="-1"></a>b <span class="ot">=</span> time.tbl<span class="sc">$</span>time [ time.tbl<span class="sc">$</span>dt_time <span class="sc">==</span> <span class="fu">min</span>(measles<span class="sc">$</span>dt_week_release) ] </span>
+<span id="cb3-147"><a href="#cb3-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-148"><a href="#cb3-148" aria-hidden="true" tabindex="-1"></a><span class="co"># Time of the last dataset</span></span>
+<span id="cb3-149"><a href="#cb3-149" aria-hidden="true" tabindex="-1"></a>B <span class="ot">=</span> <span class="fu">max</span>(time.tbl<span class="sc">$</span>time) </span>
+<span id="cb3-150"><a href="#cb3-150" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-151"><a href="#cb3-151" aria-hidden="true" tabindex="-1"></a>measles.aux <span class="ot">&lt;-</span> measles <span class="sc">|&gt;</span> </span>
+<span id="cb3-152"><a href="#cb3-152" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(week_start <span class="sc">&gt;=</span> DT_trunc) <span class="sc">|&gt;</span></span>
+<span id="cb3-153"><a href="#cb3-153" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb3-154"><a href="#cb3-154" aria-hidden="true" tabindex="-1"></a>    <span class="at">delay =</span> <span class="fu">as.numeric</span>(dt_week_release <span class="sc">-</span> week_start) <span class="sc">/</span> <span class="dv">7</span></span>
+<span id="cb3-155"><a href="#cb3-155" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> <span class="fu">left_join</span>(time.tbl, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"week_start"</span> <span class="ot">=</span> <span class="st">"dt_time"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-156"><a href="#cb3-156" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">TD =</span> time <span class="sc">+</span> delay) <span class="sc">|&gt;</span> </span>
+<span id="cb3-157"><a href="#cb3-157" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(week_start, time, delay, <span class="at">Nt_td =</span> cases, TD)</span>
+<span id="cb3-158"><a href="#cb3-158" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-159"><a href="#cb3-159" aria-hidden="true" tabindex="-1"></a>measles.aux2 <span class="ot">&lt;-</span> measles <span class="sc">|&gt;</span> </span>
+<span id="cb3-160"><a href="#cb3-160" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(week_start <span class="sc">&gt;=</span> DT_trunc) <span class="sc">|&gt;</span></span>
+<span id="cb3-161"><a href="#cb3-161" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb3-162"><a href="#cb3-162" aria-hidden="true" tabindex="-1"></a>    <span class="at">delay =</span> <span class="fu">as.numeric</span>(dt_week_release <span class="sc">-</span> week_start) <span class="sc">/</span> <span class="dv">7</span></span>
+<span id="cb3-163"><a href="#cb3-163" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> <span class="fu">left_join</span>(time.tbl, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"week_start"</span> <span class="ot">=</span> <span class="st">"dt_time"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-164"><a href="#cb3-164" aria-hidden="true" tabindex="-1"></a>  <span class="co"># To make the dataset match TD = time + delay + 1 and TD.prev = time + delay (TD = TD.prev+1) </span></span>
+<span id="cb3-165"><a href="#cb3-165" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">TD =</span> time <span class="sc">+</span> delay <span class="sc">+</span> <span class="dv">1</span>)  <span class="sc">|&gt;</span> </span>
+<span id="cb3-166"><a href="#cb3-166" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(week_start, <span class="at">Nt_tdm1 =</span> cases, TD)</span>
+<span id="cb3-167"><a href="#cb3-167" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-168"><a href="#cb3-168" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-169"><a href="#cb3-169" aria-hidden="true" tabindex="-1"></a>measles.delay <span class="ot">&lt;-</span> measles.aux <span class="sc">|&gt;</span> <span class="fu">left_join</span>(measles.aux2) <span class="sc">|&gt;</span> </span>
+<span id="cb3-170"><a href="#cb3-170" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Y =</span> Nt_td <span class="sc">-</span> Nt_tdm1) <span class="sc">|&gt;</span> </span>
+<span id="cb3-171"><a href="#cb3-171" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(week_start, time, delay, Y) <span class="sc">|&gt;</span> </span>
+<span id="cb3-172"><a href="#cb3-172" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(delay <span class="sc">!=</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-173"><a href="#cb3-173" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>(</span>
+<span id="cb3-174"><a href="#cb3-174" aria-hidden="true" tabindex="-1"></a>    measles <span class="sc">|&gt;</span> </span>
+<span id="cb3-175"><a href="#cb3-175" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(</span>
+<span id="cb3-176"><a href="#cb3-176" aria-hidden="true" tabindex="-1"></a>        <span class="at">delay =</span> <span class="fu">as.numeric</span>(dt_week_release <span class="sc">-</span> week_start) <span class="sc">/</span> <span class="dv">7</span></span>
+<span id="cb3-177"><a href="#cb3-177" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">|&gt;</span> <span class="fu">left_join</span>(time.tbl, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"week_start"</span> <span class="ot">=</span> <span class="st">"dt_time"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-178"><a href="#cb3-178" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(delay<span class="sc">==</span><span class="dv">0</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-179"><a href="#cb3-179" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span>(week_start, time, delay, <span class="at">Y=</span>cases)</span>
+<span id="cb3-180"><a href="#cb3-180" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(time, delay) <span class="sc">|&gt;</span> </span>
+<span id="cb3-181"><a href="#cb3-181" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(time <span class="sc">+</span> delay <span class="sc">&gt;</span> b, delay <span class="sc">&lt;=</span> Dmax) </span>
+<span id="cb3-182"><a href="#cb3-182" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-183"><a href="#cb3-183" aria-hidden="true" tabindex="-1"></a><span class="co"># Filling NAs for prediction</span></span>
+<span id="cb3-184"><a href="#cb3-184" aria-hidden="true" tabindex="-1"></a>measles.NA <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb3-185"><a href="#cb3-185" aria-hidden="true" tabindex="-1"></a>  <span class="at">time =</span> <span class="fu">rep</span>((b<span class="sc">+</span><span class="dv">1</span>)<span class="sc">:</span>B,Dmax), </span>
+<span id="cb3-186"><a href="#cb3-186" aria-hidden="true" tabindex="-1"></a>  <span class="at">delay =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>Dmax,<span class="at">each=</span>Dmax), <span class="at">Y =</span> <span class="cn">NA</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-187"><a href="#cb3-187" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(time<span class="sc">+</span>delay <span class="sc">&gt;</span> B) <span class="sc">|&gt;</span> </span>
+<span id="cb3-188"><a href="#cb3-188" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(time.tbl, <span class="at">by =</span> <span class="st">"time"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-189"><a href="#cb3-189" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>( <span class="st">"week_start"</span> <span class="ot">=</span> <span class="st">"dt_time"</span>) </span>
+<span id="cb3-190"><a href="#cb3-190" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-191"><a href="#cb3-191" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-192"><a href="#cb3-192" aria-hidden="true" tabindex="-1"></a><span class="co"># Runing the nowcasting model</span></span>
+<span id="cb3-193"><a href="#cb3-193" aria-hidden="true" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">nowcasting_no_age</span>(<span class="at">dataset =</span> measles.delay <span class="sc">|&gt;</span> </span>
+<span id="cb3-194"><a href="#cb3-194" aria-hidden="true" tabindex="-1"></a>                           <span class="fu">mutate</span>(<span class="at">Y =</span> <span class="fu">ifelse</span>(Y<span class="sc">&lt;</span><span class="dv">0</span>,<span class="dv">0</span>,Y)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-195"><a href="#cb3-195" aria-hidden="true" tabindex="-1"></a>                           <span class="fu">bind_rows</span>(measles.NA) <span class="sc">|&gt;</span> </span>
+<span id="cb3-196"><a href="#cb3-196" aria-hidden="true" tabindex="-1"></a>                           <span class="fu">rename</span>(<span class="st">"Time"</span><span class="ot">=</span><span class="st">"time"</span>, <span class="st">"dt_event"</span><span class="ot">=</span><span class="st">"week_start"</span>))</span>
+<span id="cb3-197"><a href="#cb3-197" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-198"><a href="#cb3-198" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-199"><a href="#cb3-199" aria-hidden="true" tabindex="-1"></a><span class="co"># Saving the MOnte Carlo samples</span></span>
+<span id="cb3-200"><a href="#cb3-200" aria-hidden="true" tabindex="-1"></a>measles.now <span class="ot">&lt;-</span> <span class="fu">nowcasting.summary</span>(out, <span class="at">age =</span> F)</span>
+<span id="cb3-201"><a href="#cb3-201" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-202"><a href="#cb3-202" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-203"><a href="#cb3-203" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-204"><a href="#cb3-204" aria-hidden="true" tabindex="-1"></a>The corrected time series is then presented in @fig-measles.now and</span>
+<span id="cb3-205"><a href="#cb3-205" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-208"><a href="#cb3-208" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb3-209"><a href="#cb3-209" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-measles.now</span></span>
+<span id="cb3-210"><a href="#cb3-210" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
+<span id="cb3-211"><a href="#cb3-211" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Reported measles cases by rash onset week in the US since 2023 with nowcasting and its uncertainty."</span></span>
+<span id="cb3-212"><a href="#cb3-212" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
+<span id="cb3-213"><a href="#cb3-213" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-214"><a href="#cb3-214" aria-hidden="true" tabindex="-1"></a>measles <span class="sc">|&gt;</span> </span>
+<span id="cb3-215"><a href="#cb3-215" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(dt_week_release <span class="sc">==</span> DT_last_B) <span class="sc">|&gt;</span> </span>
+<span id="cb3-216"><a href="#cb3-216" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> week_start, <span class="at">y =</span> cases, )) <span class="sc">+</span> </span>
+<span id="cb3-217"><a href="#cb3-217" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="at">data =</span> measles.now<span class="sc">$</span>total, </span>
+<span id="cb3-218"><a href="#cb3-218" aria-hidden="true" tabindex="-1"></a>              <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">x =</span> dt_event, <span class="at">y =</span> Median, </span>
+<span id="cb3-219"><a href="#cb3-219" aria-hidden="true" tabindex="-1"></a>                            <span class="at">ymin =</span> LI, <span class="at">ymax =</span> LS,</span>
+<span id="cb3-220"><a href="#cb3-220" aria-hidden="true" tabindex="-1"></a>                            <span class="at">fill =</span> <span class="st">"95% CI"</span>), <span class="at">alpha =</span> <span class="fl">0.25</span>) <span class="sc">+</span> </span>
+<span id="cb3-221"><a href="#cb3-221" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="at">data =</span> measles.now<span class="sc">$</span>total, </span>
+<span id="cb3-222"><a href="#cb3-222" aria-hidden="true" tabindex="-1"></a>              <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">x =</span> dt_event, <span class="at">y =</span> Median, </span>
+<span id="cb3-223"><a href="#cb3-223" aria-hidden="true" tabindex="-1"></a>                            <span class="at">ymin =</span> LIb, <span class="at">ymax =</span> LSb,</span>
+<span id="cb3-224"><a href="#cb3-224" aria-hidden="true" tabindex="-1"></a>                            <span class="at">fill =</span> <span class="st">"50% CI"</span>), <span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb3-225"><a href="#cb3-225" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">colour =</span> <span class="st">"Reported"</span>)) <span class="sc">+</span></span>
+<span id="cb3-226"><a href="#cb3-226" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> measles.now<span class="sc">$</span>total, <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">x =</span> dt_event, <span class="at">y =</span> Median, <span class="at">colour =</span> <span class="st">"Estimated (Nowcasting)"</span>)) <span class="sc">+</span></span>
+<span id="cb3-227"><a href="#cb3-227" aria-hidden="true" tabindex="-1"></a>  <span class="co"># scale_x_date(date_breaks = "week", date_labels = "%U") +</span></span>
+<span id="cb3-228"><a href="#cb3-228" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_breaks =</span> <span class="st">"10 weeks"</span>, <span class="at">date_labels =</span> <span class="st">"%U/%y"</span>) <span class="sc">+</span></span>
+<span id="cb3-229"><a href="#cb3-229" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>( <span class="st">"red"</span>, <span class="st">"black"</span>)) <span class="sc">+</span></span>
+<span id="cb3-230"><a href="#cb3-230" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"red"</span>, <span class="st">"red"</span>)) <span class="sc">+</span> </span>
+<span id="cb3-231"><a href="#cb3-231" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb3-232"><a href="#cb3-232" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Measles cases in the US"</span>,</span>
+<span id="cb3-233"><a href="#cb3-233" aria-hidden="true" tabindex="-1"></a>    <span class="co"># subtitle = "@lsbastos",</span></span>
+<span id="cb3-234"><a href="#cb3-234" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Week/year"</span>,</span>
+<span id="cb3-235"><a href="#cb3-235" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Cases"</span>,</span>
+<span id="cb3-236"><a href="#cb3-236" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"Source: https://www.cdc.gov/measles/data-research/"</span>, </span>
+<span id="cb3-237"><a href="#cb3-237" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">""</span>,</span>
+<span id="cb3-238"><a href="#cb3-238" aria-hidden="true" tabindex="-1"></a>    <span class="at">colour =</span> <span class="st">"Measles cases"</span></span>
+<span id="cb3-239"><a href="#cb3-239" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> </span>
+<span id="cb3-240"><a href="#cb3-240" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>( <span class="at">base_size =</span> <span class="dv">16</span>)  <span class="sc">+</span></span>
+<span id="cb3-241"><a href="#cb3-241" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"inside"</span>, </span>
+<span id="cb3-242"><a href="#cb3-242" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.position.inside =</span> <span class="fu">c</span>(<span class="fl">0.25</span>, <span class="fl">0.60</span>),</span>
+<span id="cb3-243"><a href="#cb3-243" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.background =</span>  <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="cn">NA</span>))</span>
+<span id="cb3-244"><a href="#cb3-244" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-245"><a href="#cb3-245" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-248"><a href="#cb3-248" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb3-249"><a href="#cb3-249" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-measles.nowB</span></span>
+<span id="cb3-250"><a href="#cb3-250" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
+<span id="cb3-251"><a href="#cb3-251" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Reported measles cases by rash onset week in the US in 2025 with nowcasting and its uncertainty."</span></span>
+<span id="cb3-252"><a href="#cb3-252" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
+<span id="cb3-253"><a href="#cb3-253" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-254"><a href="#cb3-254" aria-hidden="true" tabindex="-1"></a>measles <span class="sc">|&gt;</span> </span>
+<span id="cb3-255"><a href="#cb3-255" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(dt_week_release <span class="sc">==</span> DT_last_B, <span class="fu">year</span>(week_start) <span class="sc">==</span> <span class="dv">2025</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-256"><a href="#cb3-256" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> week_start, <span class="at">y =</span> cases, )) <span class="sc">+</span> </span>
+<span id="cb3-257"><a href="#cb3-257" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="at">data =</span> measles.now<span class="sc">$</span>total, </span>
+<span id="cb3-258"><a href="#cb3-258" aria-hidden="true" tabindex="-1"></a>              <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">x =</span> dt_event, <span class="at">y =</span> Median, </span>
+<span id="cb3-259"><a href="#cb3-259" aria-hidden="true" tabindex="-1"></a>                            <span class="at">ymin =</span> LI, <span class="at">ymax =</span> LS,</span>
+<span id="cb3-260"><a href="#cb3-260" aria-hidden="true" tabindex="-1"></a>                            <span class="at">fill =</span> <span class="st">"95% CI"</span>), <span class="at">alpha =</span> <span class="fl">0.25</span>) <span class="sc">+</span> </span>
+<span id="cb3-261"><a href="#cb3-261" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="at">data =</span> measles.now<span class="sc">$</span>total, </span>
+<span id="cb3-262"><a href="#cb3-262" aria-hidden="true" tabindex="-1"></a>              <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">x =</span> dt_event, <span class="at">y =</span> Median, </span>
+<span id="cb3-263"><a href="#cb3-263" aria-hidden="true" tabindex="-1"></a>                            <span class="at">ymin =</span> LIb, <span class="at">ymax =</span> LSb,</span>
+<span id="cb3-264"><a href="#cb3-264" aria-hidden="true" tabindex="-1"></a>                            <span class="at">fill =</span> <span class="st">"50% CI"</span>), <span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb3-265"><a href="#cb3-265" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">colour =</span> <span class="st">"Reported"</span>)) <span class="sc">+</span></span>
+<span id="cb3-266"><a href="#cb3-266" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> measles.now<span class="sc">$</span>total, <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">x =</span> dt_event, <span class="at">y =</span> Median, <span class="at">colour =</span> <span class="st">"Estimated (Nowcasting)"</span>)) <span class="sc">+</span></span>
+<span id="cb3-267"><a href="#cb3-267" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_breaks =</span> <span class="st">"week"</span>, <span class="at">date_labels =</span> <span class="st">"%U"</span>) <span class="sc">+</span></span>
+<span id="cb3-268"><a href="#cb3-268" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>( <span class="st">"red"</span>, <span class="st">"black"</span>)) <span class="sc">+</span></span>
+<span id="cb3-269"><a href="#cb3-269" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"red"</span>, <span class="st">"red"</span>)) <span class="sc">+</span> </span>
+<span id="cb3-270"><a href="#cb3-270" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb3-271"><a href="#cb3-271" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Measles cases in the US, 2025"</span>,</span>
+<span id="cb3-272"><a href="#cb3-272" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Week"</span>,</span>
+<span id="cb3-273"><a href="#cb3-273" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Cases"</span>,</span>
+<span id="cb3-274"><a href="#cb3-274" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"Source: https://www.cdc.gov/measles/data-research/"</span>, </span>
+<span id="cb3-275"><a href="#cb3-275" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">""</span>,</span>
+<span id="cb3-276"><a href="#cb3-276" aria-hidden="true" tabindex="-1"></a>    <span class="at">colour =</span> <span class="st">"Measles cases"</span></span>
+<span id="cb3-277"><a href="#cb3-277" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> </span>
+<span id="cb3-278"><a href="#cb3-278" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>( <span class="at">base_size =</span> <span class="dv">16</span>)  <span class="sc">+</span></span>
+<span id="cb3-279"><a href="#cb3-279" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"inside"</span>, </span>
+<span id="cb3-280"><a href="#cb3-280" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.position.inside =</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">0.70</span>),</span>
+<span id="cb3-281"><a href="#cb3-281" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="cn">NA</span>))</span>
+<span id="cb3-282"><a href="#cb3-282" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-283"><a href="#cb3-283" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-284"><a href="#cb3-284" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-285"><a href="#cb3-285" aria-hidden="true" tabindex="-1"></a><span class="fu">## Drawbacks</span></span>
+<span id="cb3-286"><a href="#cb3-286" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-287"><a href="#cb3-287" aria-hidden="true" tabindex="-1"></a>Correcting the delays for the whole country assumes that the estimated disease dynamics, the temporal component, is the same in the whole country which is not true because the current outbreak is concentrated in the state of Texas, so the nowcasting that would better estimate the disease dynamics should be performed at least by state or similar regions. A spatial delay correction model was proposed in <span class="co">[</span><span class="ot">@bastos2019</span><span class="co">]</span>. We are also assuming that the delay pattern does not depend on calendar time nor space which may be a strong assumption.</span>
+<span id="cb3-288"><a href="#cb3-288" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-289"><a href="#cb3-289" aria-hidden="true" tabindex="-1"></a><span class="fu">## Conclusion</span></span>
+<span id="cb3-290"><a href="#cb3-290" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-291"><a href="#cb3-291" aria-hidden="true" tabindex="-1"></a>Delays are intrinsic characteristics of the real-time epidemiological surveillance and analysts should either ignore the most up-to-date information or try to correct the delays using a statistical method. The chain-ladder method is an efficient method to correct delays in this context and can be used alone of together with other methods to provide decision makers with useful information for act to avoid or mitigate disease outbreaks.</span>
+</code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+</div></div></div></div></div>
 </div> <!-- /content -->
 
 

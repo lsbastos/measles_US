@@ -1,7 +1,11 @@
 ---
 title: "Measles in the US, 2025"
-author: "Leo Bastos"
-format: html
+author: "Leo Bastos (PROCC/Fiocruz and IMPA tech)"
+format: 
+  html:
+    code-copy: true
+    code-fold: true
+    code-tools: true
 editor: visual
 bibliography: references.bib
 ---
@@ -10,17 +14,17 @@ bibliography: references.bib
 
 This report aims to provide an estimate of the actual number of measles cases in the US using the datasets provided by the [Center for Diseases Control](https://www.cdc.gov) (CDC).
 
-Estimation is needed because in the epidemiological surveillance the most up-to-date information usually suffers from notification delay. This delay can be caused by several things, for instance the time from the symptoms onset to look after a hospital is already a source of delay, but there is also a time to confirm the case in a lab, there is also a time between the case been fully identified and the CDC become aware of that case.
+Estimation is needed because there are delays on the notification process ehich is an usual issue in real-time epidemiological surveillance. These delays can be caused by several things, for instance the time from the symptoms onset to look after a hospital is already a source of delay, but there is also a time to confirm the case in a lab, there is also a time between the case been fully identified and the CDC become aware of that case. As an example, a measles case identified today whose symptoms onset occur one week ago could be officially reported to CDC only next week, so this example carries one week delay due to the time of the patient look after a health facility, then there is some time to the case be confirmed (clinically or laboratory tested), then this case must be reported into a system that certainly varies from region to region, and finally the CDC is informed about the existence of this case. Obviously this process should be as fast as possible, but we have to accept that there are several sources of delay. Hence, a delay correction method is needed.
 
-The impact of such delay is that when a person look at the data by the symptoms onset, which is the correct thing to do because it is the date closer to the infection date, the most recent data is always truncated. This gives an impression that the number of cases are reducing but as mentioned the number of cases may be under represented because of reporting delays.
+Such delays may impact on a real-time analysis of the disease dynamics. For instance, when an analyst look at the number of cases by the time of symptoms onset, which is the correct thing to do because it is the date closer to the infection date, the most recent data is always truncated. This gives an impression that the number of cases are reducing but the number of cases may be under represented because of reporting delays.
 
-It is important to clarify the this under representation is in theory the same as the under notification, but the is an important difference. The under representation due to delays will eventually be reported and later be fully known. Of course there is also the under notification issue, i,e, cases the will never be in the system, and we are not dealing with them.
+It is important to clarify at the most recent periods this under representation is in theory the same as the under notification, but there is an important difference. The under representation due to delays will be reported and eventually be fully known. And in the under notification the cases are lost and will never be known. In the delay correction we are not dealing with under notification.
 
-So the aim here is to organize the data, apply some statistical methods to correct the delays and visualize the total reported cases given b the reported cases and the cases that occured but have not been observed yet only estimated. This correction is called **Nowcasting**.
+The aim here is to organize the data, apply some statistical methods to correct the delays and visualize the total reported cases given by the observed cases added by the estimated number of cases the occurred but have not been reported yet. This correction is called **Nowcasting**.
 
 ## Data
 
-Since end of February 2025, the in the United States releases every Friday, among other data, the weekly number of measles cases by rash onset date (<https://www.cdc.gov/measles/data-research/index.html>), Since then I downloaded every Friday the most up-to-date dataset with measles counts and save it in the data folder.
+Since end of February 2025, the in the United States releases every Friday, among other data, the weekly number of measles cases by rash onset date (<https://www.cdc.gov/measles/data-research/index.html>), Since then I downloaded every Friday the most up-to-date dataset with measles counts and save it in the [data folder](../data).
 
 ```{r}
 #| message: false
@@ -44,21 +48,15 @@ measles <- lapply( files,
 
 ## Delay correction model
 
-The delay correction is based on the chain-ladder model described (and extended) in [@bastos2019] implemented in the nowcaster R package [@nowcaster]. Let $Y_{t,d}$ be the number of measles cases at week $t$, $t=1,2,\ldots,T$, delayed by $d$ weeks, $d=0,1,2,\ldots,D_{max}$. The Bayesian chain-ladder model is given by
-$$Y_{t,d} \sim NegBin(\lambda_{t,d}, \phi), \qquad \lambda_{t,d}>0, \quad \phi>0.$$
-And the expected number of the cases can decomposed by time and delay random effects as the following
-$$\log(\lambda_{t,d}) = \alpha + \beta_t + \gamma_d.$$
+The delay correction is based on the chain-ladder model described (and extended) in [@bastos2019] implemented in the nowcaster R package [@nowcaster]. Let $Y_{t,d}$ be the number of measles cases at week $t$, $t=1,2,\ldots,T$, delayed by $d$ weeks, $d=0,1,2,\ldots,D_{max}$. The Bayesian chain-ladder model is given by $$Y_{t,d} \sim NegBin(\lambda_{t,d}, \phi), \qquad \lambda_{t,d}>0, \quad \phi>0.$$ And the expected number of the cases can decomposed by time and delay random effects as the following $$\log(\lambda_{t,d}) = \alpha + \beta_t + \gamma_d.$$
 
-The number of cases by week are given by
-$$Y_t = \sum_{d=0}^{D_{max}}Y_{t,d}, \qquad t=1,2,\ldots,T.$$
-However, all $Y_{t,d}$ for $t+d>T$ are cases that occur but have not been reported yet. Those cases will be estimated from the posterior predictive 
-$$f(\{y_{t,d: t+d > T}\}|\{y_{t,d: t+d\leq T}\}).$$
+The number of cases by week are given by $$Y_t = \sum_{d=0}^{D_{max}}Y_{t,d}, \qquad t=1,2,\ldots,T.$$ However, all $Y_{t,d}$ for $t+d>T$ are cases that occur but have not been reported yet. Those cases will be estimated from the posterior predictive $$f(\{y_{t,d: t+d > T}\}|\{y_{t,d: t+d\leq T}\}).$$
 
 Samples from this distribution can be obtained and Monte Carlo estimates for the weekly cases can be calculated, called here as the nowcasting. More details of the method can be found in [@bastos2019].
 
 ## Results
 
-@fig-measles presents the number of measles cases in the US. The year of 2025 presents an large increase in the cases compared with the previous two years. A reducing of the number of cases can be noticed in the end of the time series. However the the most up-to-date number of cases are truncated because there are some cases the have not been reported yet. 
+@fig-measles presents the number of measles cases in the US. The year of 2025 presents an large increase in the cases compared with the previous two years. A reducing of the number of cases can be noticed in the end of the time series. However the the most up-to-date number of cases are truncated because there are some cases the have not been reported yet.
 
 ```{r}
 #| label: fig-measles
@@ -90,7 +88,7 @@ measles |>
 
 ```
 
-The behavior of a false reduction in cases can be noticed when we look at all released datasets by CDC where and the end of the time series for each dataset the is a drop in the number of cases @fig-measles25. For example, in week 7, the number of reported measles cases at that week was (CONTINUE)
+There is a pattern of a reduction in the number of cases at the most up-to-date weeks for each dataset. @fig-measles25 presents dataset released weekly by in the CDC website from weeks 7 to 14. In order to illustrate the delays lets take the calendar week 7, starting on 2025-02-16 and ending on 2025-02-22, as an example. The number of measles cases at calendar week 7 reported at the same week 7 was 12, one week later the number of cases at calendar week 7 were updated and increased to 57 measles cases, then on week 9 it went up to 74, then 82 on week 10, and the numbers were updated in each new release ending up to 85 measles cases at week 7 reported on week 14. This pattern is similar on different calendar weeks. So we try to learn about the delay pattern taking into account the disease dynamics on the statistical model previously described.
 
 ```{r}
 #| label: fig-measles25
@@ -103,7 +101,12 @@ DT_trunc <- min(measles$dt_week_release) - Dmax * 7
 
 measles |> 
   filter(week_start >= DT_trunc) |> 
-  ggplot(aes(x = week_start, y = cases, group = dt_week_release, color = as.character(dt_week_release))) + 
+  mutate(
+    week_release = factor(week(dt_week_release), ordered = T)
+  ) |> 
+  ggplot(aes(x = week_start, y = cases, 
+             group = week_release, color = week_release
+             )) + 
   geom_line() + 
   scale_x_date(date_breaks = "week", date_labels = "%U") +
   # scale_color_manual(values = 1:length(files), labels = paste("Week",7 + 1:length(files))) + 
@@ -111,11 +114,13 @@ measles |>
     title = "Measles cases in the US",
     x = "Week",
     y = "Cases",
-    color = "Data release date",
+    color = "Week of data release",
     caption = "Source: https://www.cdc.gov/measles/data-research/", 
   ) + 
   theme_bw( base_size = 16) + 
-  theme(legend.position = "inside", legend.position.inside = c(0.2, 0.75))
+  theme(legend.position = "inside", 
+        legend.position.inside = c(0.2, 0.6),
+        legend.background = element_rect(fill = NA))
 
 ```
 
@@ -188,7 +193,7 @@ measles.now <- nowcasting.summary(out, age = F)
 
 ```
 
-The corrected time series is then presented in @fig-measles.now and 
+The corrected time series is then presented in @fig-measles.now and
 
 ```{r}
 #| label: fig-measles.now
@@ -223,9 +228,9 @@ measles |>
     colour = "Measles cases"
   ) + 
   theme_bw( base_size = 16)  +
-  theme(legend.position = "inside", legend.position.inside = c(0.2, 0.70))
-
-
+  theme(legend.position = "inside", 
+        legend.position.inside = c(0.25, 0.60),
+        legend.background =  element_rect(fill = NA))
 ```
 
 ```{r}
@@ -259,7 +264,16 @@ measles |>
     colour = "Measles cases"
   ) + 
   theme_bw( base_size = 16)  +
-  theme(legend.position = "inside", legend.position.inside = c(0.2, 0.70))
+  theme(legend.position = "inside", 
+        legend.position.inside = c(0.2, 0.70),
+        legend.background = element_rect(fill = NA))
 
 ```
 
+## Drawbacks
+
+Correcting the delays for the whole country assumes that the estimated disease dynamics, the temporal component, is the same in the whole country which is not true because the current outbreak is concentrated in the state of Texas, so the nowcasting that would better estimate the disease dynamics should be performed at least by state or similar regions. A spatial delay correction model was proposed in [@bastos2019]. We are also assuming that the delay pattern does not depend on calendar time nor space which may be a strong assumption.
+
+## Conclusion
+
+Delays are intrinsic characteristics of the real-time epidemiological surveillance and analysts should either ignore the most up-to-date information or try to correct the delays using a statistical method. The chain-ladder method is an efficient method to correct delays in this context and can be used alone of together with other methods to provide decision makers with useful information for act to avoid or mitigate disease outbreaks.
