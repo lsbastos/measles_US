@@ -157,3 +157,39 @@ measles |>
   theme_bw( base_size = 16)  +
   theme(legend.position = "inside", legend.position.inside = c(0.2, 0.70))
 
+# Total number of cases
+
+View(out)
+
+total.observed <- measles |> 
+  filter(dt_week_release == DT_last_B, 
+         epiyear(week_start) == 2025) |> 
+  summarise(
+    cases = sum(cases))
+
+total.runoff <- measles |> 
+  filter(dt_week_release == DT_last_B, 
+         epiyear(week_start) == 2025,
+         week_start < min(out$dt_event)) |> 
+  summarise(
+    cases = sum(cases))
+
+
+out |> group_by(sample) |> summarise(total.runoff = sum(Y) + total.runoff$cases[1]) |> 
+  summarise(
+    Mean = mean(total.runoff),
+    Q.50 = quantile(total.runoff,prob=0.5),
+    LI.50 = quantile(total.runoff,prob=0.25),
+    LS.50 = quantile(total.runoff,prob=0.75),
+    LI.95 = quantile(total.runoff,prob=0.025),
+    LS.95 = quantile(total.runoff,prob=0.975)
+  )
+
+
+out |> 
+  group_by(sample) |> 
+  summarise(cases = sum(Y) + total.runoff$cases[1]) |> 
+  ggplot() + 
+  geom_density(mapping = aes(x = cases)) +
+  geom_vline(xintercept = total.observed$cases[1], linetype = "dashed" ) + 
+  theme_bw()
