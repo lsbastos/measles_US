@@ -13,7 +13,7 @@ bibliography: references.bib
 
 This report aims to provide an estimate of the actual number of measles cases in the US using the datasets provided by the [Center for Diseases Control](https://www.cdc.gov) (CDC).
 
-Estimation is needed because there are delays on the notification process ehich is an usual issue in real-time epidemiological surveillance. These delays can be caused by several things, for instance the time from the symptoms onset to look after a hospital is already a source of delay, but there is also a time to confirm the case in a lab, there is also a time between the case been fully identified and the CDC become aware of that case. As an example, a measles case identified today whose symptoms onset occur one week ago could be officially reported to CDC only next week, so this example carries one week delay due to the time of the patient look after a health facility, then there is some time to the case be confirmed (clinically or laboratory tested), then this case must be reported into a system that certainly varies from region to region, and finally the CDC is informed about the existence of this case. Obviously this process should be as fast as possible, but we have to accept that there are several sources of delay. Hence, a delay correction method is needed.
+Estimation is needed because there are delays on the notification process which is an usual issue in real-time epidemiological surveillance. These delays can be caused by several things, for instance the time from the symptoms onset to look after a hospital is already a source of delay, but there is also a time to confirm the case in a lab, there is also a time between the case been fully identified and the CDC become aware of that case. As an example, a measles case identified today whose symptoms onset occur one week ago could be officially reported to CDC only next week, so this example carries one week delay due to the time of the patient look after a health facility, then there is some time to the case be confirmed (clinically or laboratory tested), then this case must be reported into a system that certainly varies from region to region, and finally the CDC is informed about the existence of this case. Obviously this process should be as fast as possible, but we have to accept that there are several sources of delay. Hence, a delay correction method is needed.
 
 Such delays may impact on a real-time analysis of the disease dynamics. For instance, when an analyst look at the number of cases by the time of symptoms onset, which is the correct thing to do because it is the date closer to the infection date, the most recent data is always truncated. This gives an impression that the number of cases are reducing but the number of cases may be under represented because of reporting delays.
 
@@ -54,7 +54,8 @@ Since end of February 2025, the in the United States releases every Friday, amon
 #| warning: false
 
 # Maximum delay size (Dmax) 
-Dmax <- diff(range(measles$dt_week_release)) |> as.numeric() / 7
+# Dmax <- diff(range(measles$dt_week_release)) |> as.numeric() / 7
+Dmax <- 5
 
 # Start of the week of the last dataset
 DT_last_B <- max(measles$dt_week_release) 

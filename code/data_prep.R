@@ -3,7 +3,7 @@ library(nowcaster) # https://covid19br.github.io/nowcaster/
 
 
 # Getting file names 
-files <- list.files("data/", pattern="*.csv", full.names=TRUE)
+files <- list.files("data", pattern="*.csv", full.names=TRUE)
 
 measles <- lapply( files,
                    vroom::vroom) |> 
@@ -14,7 +14,8 @@ measles <- lapply( files,
   ) |> ungroup() |> select(-a)
 
 # Maximum delay size (Dmax) 
-Dmax <- diff(range(measles$dt_week_release)) |> as.numeric() / 7
+# Dmax <- diff(range(measles$dt_week_release)) |> as.numeric() / 7
+Dmax <- 5
 
 
 # Minimum date to be considered. Information before is useless for calculate the delay
@@ -42,7 +43,8 @@ measles |>
   theme(legend.position = "inside", legend.position.inside = c(0.2, 0.75))
 
 
-time.tbl <- tibble(dt_time = seq(DT_trunc, max(measles$week_start), 7)) |> rowid_to_column(var = "time")
+time.tbl <- tibble(  dt_time = seq(DT_trunc, max(measles$week_start), 7)) |> 
+  rowid_to_column(var = "time")
 
 # Time of the first dataset
 b = time.tbl$time [ time.tbl$dt_time == min(measles$dt_week_release) ] 
@@ -85,12 +87,14 @@ measles.delay <- measles.aux |> left_join(measles.aux2) |>
 # Filling NAs for prediction
 measles.NA <- tibble(
   time = rep((b+1):B,Dmax), 
-  delay = rep(1:Dmax,each=Dmax), Y = NA) |> 
+  delay = rep(1:Dmax,each=length((b+1):B)), 
+  Y = NA) |> 
   filter(time+delay > B) |> 
   left_join(time.tbl, by = "time") |> 
   rename( "week_start" = "dt_time") 
 
 
+# measles.delay |> group_by(week_start,time) |> summarise(Y = sum(Y))
 
 out <- nowcasting_no_age(dataset = measles.delay |> 
                            mutate(Y = ifelse(Y<0,0,Y)) |> 
@@ -100,19 +104,29 @@ out <- nowcasting_no_age(dataset = measles.delay |>
 
 measles.now <- nowcasting.summary(out, age = F)
 
-measles |> 
+  
+
+# measles |> 
+#   filter(dt_week_release == DT_last_B, year(week_start) == 2025) |> 
+measles.out <- measles |> 
   filter(dt_week_release == DT_last_B, year(week_start) == 2025) |> 
+  left_join(measles.now$total, by = c("week_start"="dt_event"))
+
+measles.out |> write_csv(file = paste0("output/week",B+1,".csv"))
+
+g <- measles.out |> 
   ggplot(aes(x = week_start, y = cases, )) + 
-  geom_ribbon(data = measles.now$total, 
-              mapping = aes(x = dt_event, y = Median, 
+  geom_ribbon(#data = measles.now$total, 
+              mapping = aes(x = week_start, y = Median, 
                             ymin = LI, ymax = LS,
                             fill = "95% CI"), alpha = 0.25) + 
-  geom_ribbon(data = measles.now$total, 
-              mapping = aes(x = dt_event, y = Median, 
+  geom_ribbon(#data = measles.now$total, 
+              mapping = aes(x = week_start, y = Median, 
                             ymin = LIb, ymax = LSb,
                             fill = "50% CI"), alpha = 0.5) + 
   geom_line(aes(colour = "Reported")) +
-  geom_line(data = measles.now$total, mapping = aes(x = dt_event, y = Median, colour = "Estimated (Nowcasting)")) +
+  geom_line(#data = measles.now$total, 
+            mapping = aes(x = week_start, y = Median, colour = "Estimated (Nowcasting)")) +
   scale_x_date(date_breaks = "week", date_labels = "%U") +
   scale_color_manual(values = c( "red", "black")) +
   scale_fill_manual(values = c("red", "red")) + 
@@ -127,6 +141,9 @@ measles |>
   theme_bw( base_size = 16)  +
   theme(legend.position = "inside", legend.position.inside = c(0.2, 0.70))
 
+g
+
+ggsave(plot = g, device = "png", filename = paste0("output/nowcast",B+1,".png"))
 
 measles |> 
   filter(dt_week_release == DT_last_B) |> 
@@ -159,7 +176,7 @@ measles |>
 
 # Total number of cases
 
-View(out)
+# View(out)
 
 total.observed <- measles |> 
   filter(dt_week_release == DT_last_B, 
