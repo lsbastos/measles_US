@@ -1,0 +1,268 @@
+---
+title: "Measles in the US, 2025"
+author: "Leo Bastos"
+format: html
+bibliography: references.bib
+---
+
+## Introduction
+
+This report aims to provide an estimate of the actual number of measles cases in the US using the datasets provided by the [Center for Diseases Control](https://www.cdc.gov) (CDC).
+
+Estimation is needed because in the epidemiological surveillance the most up-to-date information usually suffers from notification delay. This delay can be caused by several things, for instance the time from the symptoms onset to look after a hospital is already a source of delay, but there is also a time to confirm the case in a lab, there is also a time between the case been fully identified and the CDC become aware of that case.
+
+The impact of such delay is that when a person look at the data by the symptoms onset, which is the correct thing to do because it is the date closer to the infection date, the most recent data is always truncated. This gives an impression that the number of cases are reducing but as mentioned the number of cases may be under represented because of reporting delays.
+
+It is important to clarify the this under representation is in theory the same as the under notification, but the is an important difference. The under representation due to delays will eventually be reported and later be fully known. Of course there is also the under notification issue, i,e, cases the will never be in the system, and we are not dealing with them.
+
+So the aim here is to organize the data, apply some statistical methods to correct the delays and visualize the total reported cases given b the reported cases and the cases that occured but have not been observed yet only estimated. This correction is called **Nowcasting**.
+
+## Data
+
+Since end of February 2025, the in the United States releases every Friday, among other data, the weekly number of measles cases by rash onset date (<https://www.cdc.gov/measles/data-research/index.html>), Since then I downloaded every Friday the most up-to-date dataset with measles counts and save it in the data folder.
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(nowcaster) # https://covid19br.github.io/nowcaster/
+
+
+# Getting file names 
+files <- list.files("../data/", pattern="*.csv", full.names=TRUE)
+
+release_dates <- substr(files,21,30)
+
+measles.l <- lapply( files, vroom::vroom)
+names(measles.l) <- release_dates
+
+measles <- measles.l |> 
+  bind_rows(.id = "release_dates") |> 
+  mutate(
+    release_dates = ymd(release_dates)
+  )
+
+```
+
+## Delay correction model
+
+The delay correction is based on the chain-ladder model described (and extended) in [@bastos2019] implemented in the nowcaster R package [@nowcaster]. Let $Y_{t,d}$ be the number of measles cases at week $t$, $t=1,2,\ldots,T$, delayed by $d$ weeks, $d=0,1,2,\ldots,D_{max}$. The Bayesian chain-ladder model is given by $$Y_{t,d} \sim NegBin(\lambda_{t,d}, \phi), \qquad \lambda_{t,d}>0, \quad \phi>0.$$ And the expected number of the cases can decomposed by time and delay random effects as the following $$\log(\lambda_{t,d}) = \alpha + \beta_t + \gamma_d.$$
+
+The number of cases by week are given by $$Y_t = \sum_{d=0}^{D_{max}}Y_{t,d}, \qquad t=1,2,\ldots,T.$$ However, all $Y_{t,d}$ for $t+d>T$ are cases that occur but have not been reported yet. Those cases will be estimated from the posterior predictive $$f(\{y_{t,d: t+d > T}\}|\{y_{t,d: t+d\leq T}\}).$$
+
+Samples from this distribution can be obtained and Monte Carlo estimates for the weekly cases can be calculated, called here as the nowcasting. More details of the method can be found in [@bastos2019].
+
+## Results
+
+@fig-measles presents the number of measles cases in the US. The year of 2025 presents an large increase in the cases compared with the previous two years. A reducing of the number of cases can be noticed in the end of the time series. However the the most up-to-date number of cases are truncated because there are some cases the have not been reported yet.
+
+```{r}
+#| label: fig-measles
+#| echo: false
+#| fig-cap: "Reported measles cases by rash onset week in the US since 2023."
+#| warning: false
+
+# Maximum delay size (Dmax) 
+Dmax <- diff(range(measles$release_dates)) |> as.numeric() / 7
+
+# Last data released
+DT_last_B <- max(measles$release_dates) 
+
+measles |> 
+  filter(release_dates == DT_last_B, year(week_start)>2023) |> 
+  ggplot(aes(x = week_start, y = cases)) + 
+  geom_line() + 
+  scale_x_date(date_breaks = "3 months", date_labels = "%b \n %Y", minor_breaks = "months") +
+  # scale_color_manual(values = 1:length(files), labels = paste("Week",7 + 1:length(files))) + 
+  labs(
+    title = "Measles cases in the US",
+    x = "Week of onset sympthoms",
+    y = "Cases",
+    # color = "Data release date",
+    caption = "Source: https://www.cdc.gov/measles/data-research/", 
+  ) + 
+  theme_bw( base_size = 16) + 
+  theme(legend.position = "inside", legend.position.inside = c(0.2, 0.75))
+
+```
+
+The behavior of a false reduction in cases can be noticed when we look at all released datasets by CDC where and the end of the time series for each dataset the is a drop in the number of cases @fig-measles25. For example, in week 7, the number of reported measles cases at that week was (CONTINUE)
+
+```{r}
+#| label: fig-measles25
+#| echo: false
+#| fig-cap: "All released data for the reported measles cases by rash onset week in the US."
+#| warning: false
+
+measles <- measles |> 
+  mutate(
+    release_dates.start = release_dates - as.numeric(format(release_dates, "%w"))
+  )
+
+
+# Minimum date to be considered. Information before is useless for calculate the delay
+DT_trunc <- min(measles$release_dates.start) 
+
+DT_trunc <- DT_trunc - Dmax * 7
+
+measles |> 
+  filter(week_start >= DT_trunc) |> 
+  ggplot(aes(x = week_start, y = cases, group = release_dates, color = as.character(release_dates))) + 
+  geom_line() + 
+  scale_x_date(date_breaks = "week", date_labels = "%U") +
+  # scale_color_manual(values = 1:length(files), labels = paste("Week",7 + 1:length(files))) + 
+  labs(
+    title = "Measles cases in the US",
+    x = "Week",
+    y = "Cases",
+    color = "Date of data release",
+    caption = "Source: https://www.cdc.gov/measles/data-research/", 
+  ) + 
+  theme_bw( base_size = 16) + 
+  theme(legend.position = "inside", legend.position.inside = c(0.2, 0.75))
+
+```
+
+The data is prepared, the nowcasting run and the Monte Carlo is saved.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# Data preparing
+time.tbl <- tibble(dt_time = seq(DT_trunc, max(measles$week_start), 7)) |> rowid_to_column(var = "time")
+
+# Time of the first dataset
+b = time.tbl$time [ time.tbl$dt_time == min(measles$release_dates.start) ] 
+
+# Time of the last dataset
+B = max(time.tbl$time) 
+
+measles.aux <- measles |> 
+  filter(week_start >= DT_trunc) |>
+  mutate(
+    delay = as.numeric(release_dates.start - week_start) / 7
+  ) |> left_join(time.tbl, by = c("week_start" = "dt_time")) |> 
+  mutate(TD = time + delay) |> 
+  select(week_start, time, delay, Nt_td = cases, TD)
+
+measles.aux2 <- measles |> 
+  filter(week_start >= DT_trunc) |>
+  mutate(
+    delay = as.numeric(release_dates.start - week_start) / 7
+  ) |> left_join(time.tbl, by = c("week_start" = "dt_time")) |>
+  # To make the dataset match TD = time + delay + 1 and TD.prev = time + delay (TD = TD.prev+1) 
+  mutate(TD = time + delay + 1)  |> 
+  select(week_start, Nt_tdm1 = cases, TD)
+
+
+measles.delay <- measles.aux |> left_join(measles.aux2) |> 
+  mutate(Y = Nt_td - Nt_tdm1) |> 
+  select(week_start, time, delay, Y) |> 
+  filter(delay != 0) |> 
+  bind_rows(
+    measles |> 
+      mutate(
+        delay = as.numeric(release_dates - week_start) / 7
+      ) |> left_join(time.tbl, by = c("week_start" = "dt_time")) |> 
+      filter(delay==0) |> 
+      select(week_start, time, delay, Y=cases)
+  ) |> arrange(time, delay) |> 
+  filter(time + delay > b, delay <= Dmax) 
+
+# Filling NAs for prediction
+measles.NA <- tibble(
+  time = rep((b+1):B,Dmax), 
+  delay = rep(1:Dmax,each=Dmax), Y = NA) |> 
+  filter(time+delay > B) |> 
+  left_join(time.tbl, by = "time") |> 
+  rename( "week_start" = "dt_time") 
+
+
+# Runing the nowcasting model
+out <- nowcasting_no_age(dataset = measles.delay |> 
+                           mutate(Y = ifelse(Y<0,0,Y)) |> 
+                           bind_rows(measles.NA) |> 
+                           rename("Time"="time", "dt_event"="week_start"))
+
+
+# Saving the Monte Carlo samples
+measles.now <- nowcasting.summary(out, age = F)
+
+```
+
+The corrected time series is then presented in @fig-measles.now and
+
+```{r}
+#| label: fig-measles.now
+#| echo: false
+#| fig-cap: "Reported measles cases by rash onset week in the US since 2023 with nowcasting and its uncertainty."
+#| warning: false
+
+measles |> 
+  filter(release_dates == DT_last_B, year(week_start)>2023) |> 
+  ggplot(aes(x = week_start, y = cases, )) + 
+  geom_ribbon(data = measles.now$total, 
+              mapping = aes(x = dt_event, y = Median, 
+                            ymin = LI, ymax = LS,
+                            fill = "95% CI"), alpha = 0.25) + 
+  geom_ribbon(data = measles.now$total, 
+              mapping = aes(x = dt_event, y = Median, 
+                            ymin = LIb, ymax = LSb,
+                            fill = "50% CI"), alpha = 0.5) + 
+  geom_line(aes(colour = "Reported")) +
+  geom_line(data = measles.now$total, mapping = aes(x = dt_event, y = Median, colour = "Estimated (Nowcasting)")) +
+  # scale_x_date(date_breaks = "week", date_labels = "%U") +
+  scale_x_date(date_breaks = "10 weeks", date_labels = "%U/%y") +
+  scale_color_manual(values = c( "red", "black")) +
+  scale_fill_manual(values = c("red", "red")) + 
+  labs(
+    title = "Measles cases in the US",
+    # subtitle = "@lsbastos",
+    x = "Week/year",
+    y = "Cases",
+    caption = "Source: https://www.cdc.gov/measles/data-research/", 
+    fill = "",
+    colour = "Measles cases"
+  ) + 
+  theme_bw( base_size = 16)  +
+  theme(legend.position = "inside", legend.position.inside = c(0.2, 0.70))
+
+
+```
+
+```{r}
+#| label: fig-measles.nowB
+#| echo: false
+#| fig-cap: "Reported measles cases by rash onset week in the US in 2025 with nowcasting and its uncertainty."
+#| warning: false
+
+measles |> 
+  filter(release_dates == DT_last_B, year(week_start) == 2025) |> 
+  ggplot(aes(x = week_start, y = cases, )) + 
+  geom_ribbon(data = measles.now$total, 
+              mapping = aes(x = dt_event, y = Median, 
+                            ymin = LI, ymax = LS,
+                            fill = "95% CI"), alpha = 0.25) + 
+  geom_ribbon(data = measles.now$total, 
+              mapping = aes(x = dt_event, y = Median, 
+                            ymin = LIb, ymax = LSb,
+                            fill = "50% CI"), alpha = 0.5) + 
+  geom_line(aes(colour = "Reported")) +
+  geom_line(data = measles.now$total, mapping = aes(x = dt_event, y = Median, colour = "Estimated (Nowcasting)")) +
+  scale_x_date(date_breaks = "week", date_labels = "%U") +
+  scale_color_manual(values = c( "red", "black")) +
+  scale_fill_manual(values = c("red", "red")) + 
+  labs(
+    title = "Measles cases in the US, 2025",
+    x = "Week",
+    y = "Cases",
+    caption = "Source: https://www.cdc.gov/measles/data-research/", 
+    fill = "",
+    colour = "Measles cases"
+  ) + 
+  theme_bw( base_size = 16)  +
+  theme(legend.position = "inside", legend.position.inside = c(0.2, 0.70))
+
+```

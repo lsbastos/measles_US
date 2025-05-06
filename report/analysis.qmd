@@ -6,7 +6,6 @@ format:
     code-copy: true
     code-fold: true
     code-tools: true
-editor: visual
 bibliography: references.bib
 ---
 
@@ -23,8 +22,6 @@ It is important to clarify at the most recent periods this under representation 
 The aim here is to organize the data, apply some statistical methods to correct the delays and visualize the total reported cases given by the observed cases added by the estimated number of cases the occurred but have not been reported yet. This correction is called **Nowcasting**.
 
 ## Data
-
-Since end of February 2025, the in the United States releases every Friday, among other data, the weekly number of measles cases by rash onset date (<https://www.cdc.gov/measles/data-research/index.html>), Since then I downloaded every Friday the most up-to-date dataset with measles counts and save it in the [data folder](../data).
 
 ```{r}
 #| message: false
@@ -46,17 +43,9 @@ measles <- lapply( files,
 
 ```
 
-## Delay correction model
 
-The delay correction is based on the chain-ladder model described (and extended) in [@bastos2019] implemented in the nowcaster R package [@nowcaster]. Let $Y_{t,d}$ be the number of measles cases at week $t$, $t=1,2,\ldots,T$, delayed by $d$ weeks, $d=0,1,2,\ldots,D_{max}$. The Bayesian chain-ladder model is given by $$Y_{t,d} \sim NegBin(\lambda_{t,d}, \phi), \qquad \lambda_{t,d}>0, \quad \phi>0.$$ And the expected number of the cases can decomposed by time and delay random effects as the following $$\log(\lambda_{t,d}) = \alpha + \beta_t + \gamma_d.$$
+Since end of February 2025, the in the United States releases every Friday, among other data, the weekly number of measles cases by rash onset date (<https://www.cdc.gov/measles/data-research/index.html>), Since then I downloaded every Friday the most up-to-date dataset with measles counts and save it in the [data folder](../data). @fig-measles presents the number of measles cases in the US. The year of 2025 presents an large increase in the cases compared with the previous two years. 
 
-The number of cases by week are given by $$Y_t = \sum_{d=0}^{D_{max}}Y_{t,d}, \qquad t=1,2,\ldots,T.$$ However, all $Y_{t,d}$ for $t+d>T$ are cases that occur but have not been reported yet. Those cases will be estimated from the posterior predictive $$f(\{y_{t,d: t+d > T}\}|\{y_{t,d: t+d\leq T}\}).$$
-
-Samples from this distribution can be obtained and Monte Carlo estimates for the weekly cases can be calculated, called here as the nowcasting. More details of the method can be found in [@bastos2019].
-
-## Results
-
-@fig-measles presents the number of measles cases in the US. The year of 2025 presents an large increase in the cases compared with the previous two years. A reducing of the number of cases can be noticed in the end of the time series. However the the most up-to-date number of cases are truncated because there are some cases the have not been reported yet.
 
 ```{r}
 #| label: fig-measles
@@ -74,7 +63,8 @@ measles |>
   filter(dt_week_release == DT_last_B) |> 
   ggplot(aes(x = week_start, y = cases)) + 
   geom_line() + 
-  scale_x_date(date_breaks = "years", date_labels = "%Y", minor_breaks = "weeks") +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b \n %Y", minor_breaks = "months") +
+  # scale_x_date(date_breaks = "years", date_labels = "%Y", minor_breaks = "weeks") +
   # scale_color_manual(values = 1:length(files), labels = paste("Week",7 + 1:length(files))) + 
   labs(
     title = "Measles cases in the US",
@@ -87,6 +77,17 @@ measles |>
   theme(legend.position = "inside", legend.position.inside = c(0.2, 0.75))
 
 ```
+
+
+## Delay correction model
+
+The delay correction is based on the chain-ladder model described (and extended) in [@bastos2019] implemented in the nowcaster R package [@nowcaster]. Let $Y_{t,d}$ be the number of measles cases at week $t$, $t=1,2,\ldots,T$, delayed by $d$ weeks, $d=0,1,2,\ldots,D_{max}$. The Bayesian chain-ladder model is given by $$Y_{t,d} \sim NegBin(\lambda_{t,d}, \phi), \qquad \lambda_{t,d}>0, \quad \phi>0.$$ And the expected number of the cases can decomposed by time and delay random effects as the following $$\log(\lambda_{t,d}) = \alpha + \beta_t + \gamma_d.$$
+
+The number of cases by week are given by $$Y_t = \sum_{d=0}^{D_{max}}Y_{t,d}, \qquad t=1,2,\ldots,T.$$ However, all $Y_{t,d}$ for $t+d>T$ are cases that occur but have not been reported yet. Those cases will be estimated from the posterior predictive $$f(\{y_{t,d: t+d > T}\}|\{y_{t,d: t+d\leq T}\}).$$
+
+Samples from this distribution can be obtained and Monte Carlo estimates for the weekly cases can be calculated, called here as the nowcasting. More details of the method can be found in [@bastos2019].
+
+## Results
 
 There is a pattern of a reduction in the number of cases at the most up-to-date weeks for each dataset. @fig-measles25 presents dataset released weekly by in the CDC website from weeks 7 to 14. In order to illustrate the delays lets take the calendar week 7, starting on 2025-02-16 and ending on 2025-02-22, as an example. The number of measles cases at calendar week 7 reported at the same week 7 was 12, one week later the number of cases at calendar week 7 were updated and increased to 57 measles cases, then on week 9 it went up to 74, then 82 on week 10, and the numbers were updated in each new release ending up to 85 measles cases at week 7 reported on week 14. This pattern is similar on different calendar weeks. So we try to learn about the delay pattern taking into account the disease dynamics on the statistical model previously described.
 
@@ -124,7 +125,7 @@ measles |>
 
 ```
 
-The data is prepared, the nowcasting run and the Monte Carlo is saved.
+The data is prepared to predict the cases that occur but have not been reported yet using the nowcaster package. A Monte Carlo sample is saved.
 
 ```{r}
 #| echo: true
@@ -180,15 +181,16 @@ measles.NA <- tibble(
   left_join(time.tbl, by = "time") |> 
   rename( "week_start" = "dt_time") 
 
-
-# Runing the nowcasting model
-out <- nowcasting_no_age(dataset = measles.delay |> 
+measles.inla <- measles.delay |> 
                            mutate(Y = ifelse(Y<0,0,Y)) |> 
                            bind_rows(measles.NA) |> 
-                           rename("Time"="time", "dt_event"="week_start"))
+                           rename("Time"="time", "dt_event"="week_start")
+
+# Runing the nowcasting model
+out <- nowcasting_no_age(dataset = measles.inla)
 
 
-# Saving the MOnte Carlo samples
+# Saving the Monte Carlo samples
 measles.now <- nowcasting.summary(out, age = F)
 
 ```
