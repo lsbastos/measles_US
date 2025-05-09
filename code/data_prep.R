@@ -112,7 +112,8 @@ measles.out <- measles |>
   filter(dt_week_release == DT_last_B, year(week_start) == 2025) |> 
   left_join(measles.now$total, by = c("week_start"="dt_event"))
 
-measles.out |> write_csv(file = paste0("output/week",B+1,".csv"))
+## Saving
+# measles.out |> write_csv(file = paste0("output/week",B+1,".csv"))
 
 g <- measles.out |> 
   ggplot(aes(x = week_start, y = cases, )) + 
@@ -143,7 +144,7 @@ g <- measles.out |>
 
 g
 
-ggsave(plot = g, device = "png", filename = paste0("output/nowcast",B+1,".png"))
+# ggsave(plot = g, device = "png", filename = paste0("output/nowcast",B+1,".png"))
 
 measles |> 
   filter(dt_week_release == DT_last_B) |> 
