@@ -40,10 +40,19 @@ for(k in 1:K){
       fill = "",
       colour = "Measles cases"
     ) + 
-    ylim(0,310) +
+    ylim(0,352) +
     theme_bw( base_size = 16)  +
     theme(legend.position = "inside", legend.position.inside = c(0.2, 0.70))
   
 }
 
 gg
+
+
+# Gerando um gif no braco
+pdf(file = "output/test.pdf", width=9.9, height=5.9)
+gg
+dev.off()
+
+
+# convert -verbose -delay 50 -loop 0 -density 300 test.pdf file.gif
